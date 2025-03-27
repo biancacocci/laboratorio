@@ -1,19 +1,18 @@
 #include <iostream>
+#include <memory>
 #include "user.h"
 #include "message.h"
 #include "chat.h"
 #include "chatregister.h"
 
 int main() {
-
     try {
-
         user alice("Alice", 1);
         user bob("Bob", 5);
         user carolina("Carolina", 3);
 
 
-        std::shared_ptr<chat> chat1=std::make_shared<chat>(alice, bob);
+        auto chat1 = std::make_shared<chat>(alice, bob);
 
         chatregister registry;
 
@@ -28,7 +27,6 @@ int main() {
         chat1->addMessage(msg2);
         chat1->addMessage(msg3);
         chat1->addMessage(msg4);
-
 
         msg1.markAsRead();
         msg2.markAsRead();
@@ -57,10 +55,8 @@ int main() {
         });
 
 
-
-
         std::cout << "\nVerifica registro chat:" << std::endl;
-        chat* foundChat = registry.findChat(alice, bob);
+        auto foundChat = registry.findChat(alice, bob);
         std::cout << (foundChat ? "Chat trovata tra " + foundChat->getUser1().getName() + " e " + foundChat->getUser2().getName() : "Chat non trovata tra Alice e Bob.") << std::endl;
 
         foundChat = registry.findChat(bob, carolina);
@@ -79,6 +75,7 @@ int main() {
         } else {
             std::cout << "\nMessaggio non trovato: " << searchText << std::endl;
         }
+
 
         try {
             chat1->forwardMessage(msg1, carolina);
@@ -106,6 +103,9 @@ int main() {
     } catch (const EmptyMessageException& e) {
         std::cerr << "Errore nella creazione del messaggio: " << e.what() << std::endl;
         return 2;
+    } catch (const std::exception& e) {
+        std::cerr << "Errore generico: " << e.what() << std::endl;
+        return 3;
     }
 
     return 0;

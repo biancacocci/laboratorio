@@ -14,10 +14,9 @@ const user &chat::getUser2() const {
     return user2;
 }
 
-const message* chat::getLastMessage() const {
+const std::shared_ptr<message> chat::getLastMessage() const {
     return messages.empty() ? nullptr : messages.back();
 }
-
 
 void chat::forEachMessage(std::function<void(const message&)> callback) const {
     for (const auto& msg : messages) {
@@ -27,10 +26,9 @@ void chat::forEachMessage(std::function<void(const message&)> callback) const {
 
 
 
-void chat::addMessage( message &msg) {
-    messages.push_back(&msg);
+void chat::addMessage(const message& msg) {
+    messages.push_back(std::make_shared<message>(msg));
 }
-
 
 void chat::removeMessage(const message& msg) {
     if (msg.getIsRead()) {
@@ -38,22 +36,21 @@ void chat::removeMessage(const message& msg) {
     }
 
 
-    messages.remove_if([&](const message* m) {
-        return m->getSender() == msg.getSender() && m->getReceiver() == msg.getReceiver() && m->getText() == msg.getText();
+    messages.remove_if([&](const std::shared_ptr<message>& m) {
+        return *m == msg;
     });
 }
 
 
-std::list<message*> chat::findMessageByText(const std::string& text) const {
-    std::list<message*> foundMessages;
-    for (auto& msg : messages) {
+std::list<std::shared_ptr<message>> chat::findMessageByText(const std::string& text) const {
+    std::list<std::shared_ptr<message>> foundMessages;
+    for (const auto& msg : messages) {
         if (msg->getText().find(text) != std::string::npos) {
-            foundMessages.push_back(msg);
+            foundMessages.push_back(msg); // Ora i tipi coincidono
         }
     }
     return foundMessages;
 }
-
 
 
 
@@ -76,9 +73,6 @@ void chat::forwardMessage(const message& msg, user& targetUser) {
 
 
 chat::~chat() {
-    for (auto& msg : messages) {
-        delete msg;
-    }
     messages.clear();
 }
 

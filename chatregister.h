@@ -18,7 +18,7 @@ public:
 
     void removeChat(const user& u1, const user& u2);
 
-    chat* findChat(const user& u1, const user& u2);
+    std::shared_ptr<chat> findChat(const user& u1, const user& u2);
 
     void listChats() const;
 

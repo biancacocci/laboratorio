@@ -26,15 +26,13 @@ public:
 
     void forEachMessage(std::function<void(const message&)> callback) const;
 
-    void addMessage(message& message);
+    void addMessage(const message& msg);
 
     void removeMessage(const message& msg);
 
-    const message* getLastMessage() const;
+    const std::shared_ptr<message>  getLastMessage() const;
 
-
-
-    std::list<message*> findMessageByText(const std::string& text) const;
+    std::list<std::shared_ptr<message>> findMessageByText(const std::string& text) const;
 
     void forwardMessage(const message& msg, user& targetUser);
 
@@ -43,7 +41,7 @@ public:
 private:
     const user user1;
     const user user2;
-    std:: list <message*> messages;
+    std::list<std::shared_ptr<message>> messages;
 
 };
 

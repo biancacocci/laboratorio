@@ -51,6 +51,20 @@ TEST_F(ChatRegisterTest, FindChat) {
     EXPECT_EQ(chatReg->findChat(*user1, *user3), nullptr);
 }
 
+TEST_F(ChatRegisterTest, GetChats) {
+    const auto& chatList = chatReg->getChats();
+    EXPECT_EQ(chatList.size(), 2);
+
+    bool found1 = false, found2 = false;
+    for (const auto& c : chatList) {
+        if (c->getUser1().getName() == "Alice" && c->getUser2().getName() == "Bob")
+            found1 = true;
+        if (c->getUser1().getName() == "Bob" && c->getUser2().getName() == "Charlie")
+            found2 = true;
+    }
+    EXPECT_TRUE(found1);
+    EXPECT_TRUE(found2);
+}
 TEST_F(ChatRegisterTest, ListChats) {
     testing::internal::CaptureStdout();
     chatReg->listChats();

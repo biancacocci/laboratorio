@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 #include "chat.h"
-
+#include "message.h"
 class ChatTest : public ::testing::Test {
 protected:
     std::unique_ptr<user> user1;
@@ -17,11 +17,14 @@ protected:
         user3 = std::make_unique<user>("Charlie", 3);
         chat1 = std::make_unique<chat>(*user1, *user2);
     }
+    void TearDown() override {
+        messages.clear();
+    }
 };
 
 TEST_F(ChatTest, Constructor) {
-    EXPECT_EQ(chat1->getUser1(), *user1);
-    EXPECT_EQ(chat1->getUser2(), *user2);
+    EXPECT_EQ(chat1->getUser1().getName(), user1->getName());
+    EXPECT_EQ(chat1->getUser2().getName(), user2->getName());
     EXPECT_EQ(chat1->getLastMessage(), nullptr);
 }
 
@@ -71,17 +74,25 @@ TEST_F(ChatTest, ForwardMessageValid) {
     messages.push_back(std::make_shared<message>(*user1, *user2, "Messaggio originale"));
     chat1->addMessage(*messages.back());
 
+    testing::internal::CaptureStdout();
     chat1->forwardMessage(*messages.back(), *user3);
+    std::string output = testing::internal::GetCapturedStdout();
 
     bool found = false;
     chat1->forEachMessage([&](const message& msg) {
-        if(msg.getText() == "Inoltrato: Messaggio originale") found = true;
+        if (msg.getText() == "Inoltrato: Messaggio originale" &&
+            msg.getSender().getName() == user1->getName()) {
+            found = true;
+        }
     });
     EXPECT_TRUE(found);
+    EXPECT_NE(output.find("Messaggio inoltrato con successo"), std::string::npos);
 }
 
 TEST_F(ChatTest, ForwardMessageInvalid) {
     message fakeMessage(*user1, *user2, "Messaggio falso");
     EXPECT_THROW(chat1->forwardMessage(fakeMessage, *user3), std::invalid_argument);
 }
+
+
 

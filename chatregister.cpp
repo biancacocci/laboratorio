@@ -21,11 +21,12 @@ void chatregister::removeChat(const user& u1, const user& u2) {
     });
 }
 
-chat* chatregister::findChat(const user& u1, const user& u2) {
+
+std::shared_ptr<chat> chatregister::findChat(const user& u1, const user& u2) {
     for (auto& c : chats) {
         if ((c->getUser1() == u1 && c->getUser2() == u2) ||
             (c->getUser1() == u2 && c->getUser2() == u1)) {
-            return c.get();
+            return c;
         }
     }
     return nullptr;
@@ -43,7 +44,8 @@ void chatregister::listChats() const {
     for (const auto& c : chats) {
         std::cout << index++ << ". " << c->getUser1().getName() << " & " << c->getUser2().getName() << "\n";
 
-        const message* lastMessage = c->getLastMessage();
+
+        const auto lastMessage = c->getLastMessage();
         if (lastMessage) {
             std::cout << "   Ultimo messaggio: "
                       << lastMessage->getSender().getName() << " ha detto: '"
