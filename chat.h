@@ -18,29 +18,29 @@ public:
 
 class chat {
 public:
-    chat(user& user1, user& user2);
+    chat(const user& user1, const user& user2);
 
     const user &getUser1() const;
 
     const user &getUser2() const;
 
-    const std::list<message*> &getMessages() const;
+    void forEachMessage(std::function<void(const message&)> callback) const;
 
     void addMessage(message& message);
 
     void removeMessage(const message& msg);
 
-
+    const message* getLastMessage() const;
     bool hasUser(const user& u) const;
 
-    message* findMessageByText(const std::string& text) const;
+    std::list<message*> findMessageByText(const std::string& text) const;
     void forwardMessage(const message& msg, user& targetUser);
 
     ~chat();
 
 private:
-    user user1;
-    user user2;
+    const user user1;
+    const user user2;
     std:: list <message*> messages;
 
 };

@@ -31,6 +31,8 @@ chat* chatregister::findChat(const user& u1, const user& u2) {
     return nullptr;
 }
 
+// chatregister.cpp - MODIFICHE NECESSARIE
+
 void chatregister::listChats() const {
     if (chats.empty()) {
         std::cout << "Nessuna chat registrata.\n";
@@ -42,10 +44,9 @@ void chatregister::listChats() const {
     for (const auto& c : chats) {
         std::cout << index++ << ". " << c->getUser1().getName() << " & " << c->getUser2().getName() << "\n";
 
-        // Mostriamo solo una breve anteprima dell'ultimo messaggio, se esiste
-        const auto& messages = c->getMessages();
-        if (!messages.empty()) {
-            const message* lastMessage = messages.back();  // Puntatore all'ultimo messaggio
+        // MODIFICATO: Usa getLastMessage()
+        const message* lastMessage = c->getLastMessage();
+        if (lastMessage) {
             std::cout << "   Ultimo messaggio: "
                       << lastMessage->getSender().getName() << " ha detto: '"
                       << lastMessage->getText() << "'\n";

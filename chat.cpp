@@ -2,7 +2,7 @@
 #include "chat.h"
 #include <iostream>
 // Costruttore della chat
-chat::chat(user& user1, user& user2): user1(user1), user2(user2) {}
+chat::chat(const user& user1, const  user& user2): user1(user1), user2(user2) {}
 
 // Getter per user1
 const user &chat::getUser1() const {
@@ -13,11 +13,17 @@ const user &chat::getUser1() const {
 const user &chat::getUser2() const {
     return user2;
 }
-
-// Getter per i messaggi
-const std::list<message*> &chat::getMessages() const {
-    return messages;
+const message* chat::getLastMessage() const {
+    return messages.empty() ? nullptr : messages.back();
 }
+
+
+void chat::forEachMessage(std::function<void(const message&)> callback) const {
+    for (const auto& msg : messages) {
+        callback(*msg);
+    }
+}
+
 
 // Aggiunge un messaggio alla chat (passa un puntatore al messaggio)
 void chat::addMessage( message &msg) {
@@ -42,29 +48,32 @@ bool chat::hasUser(const user &u) const {
     return u == user1 || u == user2;
 }
 
-message* chat::findMessageByText(const std::string& text) const {
+std::list<message*> chat::findMessageByText(const std::string& text) const {
+    std::list<message*> foundMessages;
     for (auto& msg : messages) {
-        if (msg->getText() == text) {
-            return msg;
+        // Usa find() per cercare la sottostringa nel messaggio
+        if (msg->getText().find(text) != std::string::npos) {
+            foundMessages.push_back(msg);  // Aggiungi il messaggio alla lista se il testo è trovato
         }
     }
-    return nullptr;  // Restituisce nullptr se il messaggio non viene trovato
+    return foundMessages;  // Restituisce la lista dei messaggi trovati
 }
 
+
+
+
+
 void chat::forwardMessage(const message& msg, user& targetUser) {
-    // Controlliamo se il messaggio esiste
-    if (findMessageByText(msg.getText()) == nullptr) {
+    if (findMessageByText(msg.getText()).empty()) {
         throw std::invalid_argument("Il messaggio specificato non esiste nella chat.");
     }
 
-    // Crea il nuovo messaggio con il prefisso "Inoltrato: "
     message* forwardedMessage = new message(
-            msg.getSender(), // Il mittente rimane invariato
-            targetUser, // Il destinatario della chat di destinazione
-            "Inoltrato: " + msg.getText() // Aggiungi il tag "Inoltrato: "
+            msg.getSender(),
+            targetUser,
+            "Inoltrato: " + msg.getText()
     );
 
-    // Aggiungiamo il messaggio alla chat della destinazione
     addMessage(*forwardedMessage);
 
     std::cout << "Messaggio inoltrato con successo da " << msg.getSender().getName() << " a " << targetUser.getName() << std::endl;

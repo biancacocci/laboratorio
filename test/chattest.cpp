@@ -3,94 +3,89 @@
 
 class ChatTest : public ::testing::Test {
 protected:
-    // Oggetti necessari per i test
     user user1, user2, user3;
     chat* chat1;
+    std::vector<message> messages;  // Mantiene i messaggi in scope
 
-    // Setup che viene eseguito prima di ogni test
     void SetUp() override {
         user1 = user("Alice", 1);
         user2 = user("Bob", 2);
         user3 = user("Charlie", 3);
-
-        // Creazione della chat tra user1 e user2
         chat1 = new chat(user1, user2);
     }
 
-    // Destructor che si occupa di deallocare la chat creata
     void TearDown() override {
-        delete chat1;  // Libera la memoria della chat
+        delete chat1;
     }
 };
 
-// Test del costruttore
 TEST_F(ChatTest, Constructor) {
     EXPECT_EQ(chat1->getUser1(), user1);
     EXPECT_EQ(chat1->getUser2(), user2);
-    EXPECT_TRUE(chat1->getMessages().empty());
+    EXPECT_EQ(chat1->getLastMessage(), nullptr);  // Sostituisce getMessages().empty()
 }
 
-// Test di `addMessage()`
 TEST_F(ChatTest, AddMessage) {
-    message m(user1, user2, "Ciao Bob!");
-    chat1->addMessage(m);
+    messages.emplace_back(user1, user2, "Ciao Bob!");
+    chat1->addMessage(messages.back());
 
-    ASSERT_EQ(chat1->getMessages().size(), 1);
-    EXPECT_EQ(chat1->getMessages().front()->getText(), "Ciao Bob!");
+    int count = 0;
+    chat1->forEachMessage([&](const message& msg) { count++; });  // Conta i messaggi
+    EXPECT_EQ(count, 1);
+    EXPECT_EQ(chat1->getLastMessage()->getText(), "Ciao Bob!");
 }
 
-// Test di `removeMessage()` con messaggio non letto
 TEST_F(ChatTest, RemoveMessageNotRead) {
-    message m(user1, user2, "Messaggio da eliminare");
-    chat1->addMessage(m);
+    messages.emplace_back(user1, user2, "Messaggio da eliminare");
+    chat1->addMessage(messages.back());
 
-    chat1->removeMessage(m);
-    EXPECT_TRUE(chat1->getMessages().empty());
+    chat1->removeMessage(messages.back());
+    EXPECT_EQ(chat1->getLastMessage(), nullptr);  // Verifica che non ci siano messaggi
 }
 
-// Test di `removeMessage()` con messaggio già letto
 TEST_F(ChatTest, RemoveMessageAlreadyRead) {
-    message m(user1, user2, "Messaggio già letto");
-    m.markAsRead();
-    chat1->addMessage(m);
+    messages.emplace_back(user1, user2, "Messaggio già letto");
+    messages.back().markAsRead();
+    chat1->addMessage(messages.back());
 
-    EXPECT_THROW(chat1->removeMessage(m), MessageAlreadyReadException);
+    EXPECT_THROW(chat1->removeMessage(messages.back()), MessageAlreadyReadException);
 }
 
-// Test di `hasUser()` per utente presente e assente
 TEST_F(ChatTest, HasUser) {
     EXPECT_TRUE(chat1->hasUser(user1));
     EXPECT_TRUE(chat1->hasUser(user2));
     EXPECT_FALSE(chat1->hasUser(user3));
 }
 
-// Test di `findMessageByText()` quando il messaggio esiste
 TEST_F(ChatTest, FindMessageByText_Exists) {
-    message m(user1, user2, "Ciao Bob!");
-    chat1->addMessage(m);
+    messages.emplace_back(user1, user2, "Ciao Bob!");
+    chat1->addMessage(messages.back());
 
-    EXPECT_EQ(chat1->findMessageByText("Ciao Bob!"), &m);
+    auto result = chat1->findMessageByText("Ciao Bob!");
+    ASSERT_FALSE(result.empty());
+    EXPECT_EQ(result.front()->getText(), "Ciao Bob!");
 }
 
-// Test di `findMessageByText()` quando il messaggio non esiste
 TEST_F(ChatTest, FindMessageByText_NotExists) {
-    EXPECT_EQ(chat1->findMessageByText("Messaggio inesistente"), nullptr);
+    auto result = chat1->findMessageByText("Messaggio inesistente");
+    EXPECT_TRUE(result.empty());
 }
 
-// Test di `forwardMessage()` con messaggio esistente
 TEST_F(ChatTest, ForwardMessageValid) {
-    message m(user1, user2, "Messaggio originale");
-    chat1->addMessage(m);
+    messages.emplace_back(user1, user2, "Messaggio originale");
+    chat1->addMessage(messages.back());
 
-    chat1->forwardMessage(m, user3);
+    chat1->forwardMessage(messages.back(), user3);
 
-    EXPECT_EQ(chat1->getMessages().back()->getText(), "Inoltrato: Messaggio originale");
+    bool found = false;
+    chat1->forEachMessage([&](const message& msg) {  // Cerca il messaggio inoltrato
+        if(msg.getText() == "Inoltrato: Messaggio originale") found = true;
+    });
+    EXPECT_TRUE(found);
 }
 
-// Test di `forwardMessage()` con messaggio non esistente
 TEST_F(ChatTest, ForwardMessageInvalid) {
     message fakeMessage(user1, user2, "Messaggio falso");
-
     EXPECT_THROW(chat1->forwardMessage(fakeMessage, user3), std::invalid_argument);
 }
 
