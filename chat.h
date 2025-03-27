@@ -9,7 +9,7 @@
 #include <list>
 #include <stdexcept>
 
-// Eccezione per la cancellazione di un messaggio letto
+
 class MessageAlreadyReadException : public std::runtime_error {
 public:
     explicit MessageAlreadyReadException(const std::string& message)
@@ -31,9 +31,11 @@ public:
     void removeMessage(const message& msg);
 
     const message* getLastMessage() const;
-    bool hasUser(const user& u) const;
+
+
 
     std::list<message*> findMessageByText(const std::string& text) const;
+
     void forwardMessage(const message& msg, user& targetUser);
 
     ~chat();

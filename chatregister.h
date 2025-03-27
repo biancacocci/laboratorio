@@ -10,7 +10,7 @@
 
 class chatregister {
 public:
-    explicit chatregister();
+
 
     const std::list<std::shared_ptr<chat>> &getChats() const;
 

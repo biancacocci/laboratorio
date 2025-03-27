@@ -1,72 +1,89 @@
 #include <gtest/gtest.h>
+#include <memory>
 #include "message.h"
+#include "user.h"
 
 class MessageTest : public ::testing::Test {
 protected:
-    // Oggetti necessari per i test
-    user sender, receiver;
-    message* msg;
+    std::unique_ptr<user> sender;
+    std::unique_ptr<user> receiver;
+    std::unique_ptr<message> test_msg;
+    std::unique_ptr<message> empty_msg;
 
-    // Setup che viene eseguito prima di ogni test
     void SetUp() override {
-        sender = user("Alice", 1);
-        receiver = user("Bob", 2);
-
-        // Creazione del messaggio
-        msg = new message(sender, receiver, "Ciao Bob!");
-    }
-
-    // Destructor che si occupa di deallocare il messaggio creato
-    void TearDown() override {
-        delete msg;  // Libera la memoria del messaggio
+        sender = std::make_unique<user>("Alice", 1);
+        receiver = std::make_unique<user>("Bob", 2);
+        test_msg = std::make_unique<message>(*sender, *receiver, "Ciao Bob!");
     }
 };
 
-// Test del costruttore
 TEST_F(MessageTest, Constructor) {
-    EXPECT_EQ(msg->getSender(), sender);
-    EXPECT_EQ(msg->getReceiver(), receiver);
-    EXPECT_EQ(msg->getText(), "Ciao Bob!");
+    EXPECT_EQ(test_msg->getSender().getName(), "Alice");
+    EXPECT_EQ(test_msg->getReceiver().getName(), "Bob");
+    EXPECT_EQ(test_msg->getText(), "Ciao Bob!");
+    EXPECT_FALSE(test_msg->getIsRead());
 }
 
-// Test di un costruttore che lancia un'eccezione quando il testo è vuoto
-TEST_F(MessageTest, Constructor_EmptyText) {
-    EXPECT_THROW(new message(sender, receiver, ""), EmptyMessageException);
+TEST_F(MessageTest, ConstructorEmptyText) {
+    EXPECT_THROW(message(*sender, *receiver, ""), EmptyMessageException);
 }
 
-// Test di `getSender()`
 TEST_F(MessageTest, GetSender) {
-    EXPECT_EQ(msg->getSender(), sender);
+    EXPECT_EQ(test_msg->getSender().getId(), 1);
+    EXPECT_EQ(test_msg->getSender().getName(), "Alice");
 }
 
-// Test di `getReceiver()`
 TEST_F(MessageTest, GetReceiver) {
-    EXPECT_EQ(msg->getReceiver(), receiver);
+    EXPECT_EQ(test_msg->getReceiver().getId(), 2);
+    EXPECT_EQ(test_msg->getReceiver().getName(), "Bob");
 }
 
-// Test di `getText()`
 TEST_F(MessageTest, GetText) {
-    EXPECT_EQ(msg->getText(), "Ciao Bob!");
+    EXPECT_EQ(test_msg->getText(), "Ciao Bob!");
 }
 
-// Test di `setText()` con testo valido
-TEST_F(MessageTest, SetText_Valid) {
-    msg->setText("Nuovo messaggio");
-    EXPECT_EQ(msg->getText(), "Nuovo messaggio");
+TEST_F(MessageTest, SetTextValid) {
+    test_msg->setText("Nuovo messaggio");
+    EXPECT_EQ(test_msg->getText(), "Nuovo messaggio");
 }
 
-// Test di `setText()` con testo vuoto (lancia un'eccezione)
-TEST_F(MessageTest, SetText_Empty) {
-    EXPECT_THROW(msg->setText(""), EmptyMessageException);
+TEST_F(MessageTest, SetTextEmpty) {
+    EXPECT_THROW(test_msg->setText(""), EmptyMessageException);
 }
 
-// Test di `getIsRead()` (inizialmente non letto)
-TEST_F(MessageTest, GetIsRead) {
-    EXPECT_FALSE(msg->getIsRead());
+TEST_F(MessageTest, GetIsReadInitiallyFalse) {
+    EXPECT_FALSE(test_msg->getIsRead());
 }
 
-// Test di `markAsRead()` (dopo la lettura)
 TEST_F(MessageTest, MarkAsRead) {
-    msg->markAsRead();
-    EXPECT_TRUE(msg->getIsRead());
+    test_msg->markAsRead();
+    EXPECT_TRUE(test_msg->getIsRead());
+
+
+    test_msg->markAsRead();
+    EXPECT_TRUE(test_msg->getIsRead());
 }
+
+TEST_F(MessageTest, EqualityOperator) {
+
+    message msg1(*sender, *receiver, "Ciao Bob!");
+    message msg2(*sender, *receiver, "Ciao Bob!");
+
+
+    message msg3(*receiver, *sender, "Ciao Alice!");
+    message msg4(*sender, *receiver, "Ciao Bob!");
+    msg4.markAsRead();
+
+
+    EXPECT_TRUE(msg1 == msg2);
+    EXPECT_FALSE(msg1 == msg3);
+    EXPECT_FALSE(msg1 == msg4);
+}
+
+TEST_F(MessageTest, CopyConstructor) {
+    message msg_copy(*test_msg);
+    EXPECT_EQ(msg_copy.getText(), test_msg->getText());
+    EXPECT_EQ(msg_copy.getSender().getName(), test_msg->getSender().getName());
+    EXPECT_EQ(msg_copy.getIsRead(), test_msg->getIsRead());
+}
+

@@ -4,7 +4,7 @@
 
 #include "chatregister.h"
 #include <iostream>
-chatregister::chatregister() {}
+
 
 const std::list<std::shared_ptr<chat>> &chatregister::getChats() const {
     return chats;
@@ -31,7 +31,6 @@ chat* chatregister::findChat(const user& u1, const user& u2) {
     return nullptr;
 }
 
-// chatregister.cpp - MODIFICHE NECESSARIE
 
 void chatregister::listChats() const {
     if (chats.empty()) {
@@ -44,7 +43,6 @@ void chatregister::listChats() const {
     for (const auto& c : chats) {
         std::cout << index++ << ". " << c->getUser1().getName() << " & " << c->getUser2().getName() << "\n";
 
-        // MODIFICATO: Usa getLastMessage()
         const message* lastMessage = c->getLastMessage();
         if (lastMessage) {
             std::cout << "   Ultimo messaggio: "

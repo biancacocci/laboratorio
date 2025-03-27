@@ -14,7 +14,7 @@ public:
 class user {
 public:
     user(std::string  name, int id);
-    user();
+
     const std::string &getName() const;
 
     int getId() const;

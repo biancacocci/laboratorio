@@ -10,6 +10,13 @@ message::message(user sender, user receiver, std::string text): sender(sender) ,
 }
 
 
+bool message::operator==(const message& other) const {
+    return (sender == other.sender) &&
+           (receiver == other.receiver) &&
+           (text == other.text) &&
+           (isRead == other.isRead);
+}
+
 const user &message::getSender() const {
     return sender;
 }

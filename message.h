@@ -5,7 +5,6 @@
 #ifndef LABORATORIO_MESSAGE_H
 #define LABORATORIO_MESSAGE_H
 #include "user.h"
-
 #include <stdexcept>
 
 class EmptyMessageException : public std::runtime_error {
@@ -14,10 +13,10 @@ public:
         : std::runtime_error(message) {}
 };
 
-
 class message {
 public:
     message(user sender, user receiver, std::string text);
+
 
     void setText(const std::string &newtext);
 
@@ -30,6 +29,9 @@ public:
     bool getIsRead () const;
 
     void markAsRead();
+
+    bool operator==(const message& other) const;
+
 private:
     user sender;
     user receiver;
