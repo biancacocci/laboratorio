@@ -2,13 +2,13 @@
 // Created by Bianca Cocci on 02/03/25.
 //
 #include "message.h"
-message::message(user sender, user receiver, std::string text): sender(sender) , receiver(receiver) , text(text) {
+
+message::message(const user& sender, const user& receiver, const std::string& text): sender(sender) , receiver(receiver) , text(text) {
     if (text.empty()) {
         throw EmptyMessageException("Il testo del messaggio non può essere vuoto.");
     }
     this->text = text;
 }
-
 
 bool message::operator==(const message& other) const {
     return (sender == other.sender) &&
@@ -36,8 +36,7 @@ void message::setText(const std::string& newText) {
     text = newText;
 }
 
-
-bool message::getIsRead() const {
+bool message::IsRead() const {
     return isRead;
 }
 

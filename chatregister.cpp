@@ -4,13 +4,14 @@
 
 #include "chatregister.h"
 #include <iostream>
+#include "chat.h"
 
 
 const std::list<std::shared_ptr<chat>> &chatregister::getChats() const {
     return chats;
 }
 
-void chatregister:: addChat(const std::shared_ptr<chat>& chat) {
+void chatregister:: addChat(std::shared_ptr<chat>& chat) {
     chats.push_front(chat);
 }
 
@@ -20,7 +21,6 @@ void chatregister::removeChat(const user& u1, const user& u2) {
                (c->getUser1() == u2 && c->getUser2() == u1);
     });
 }
-
 
 std::shared_ptr<chat> chatregister::findChat(const user& u1, const user& u2) {
     for (auto& c : chats) {
@@ -32,7 +32,6 @@ std::shared_ptr<chat> chatregister::findChat(const user& u1, const user& u2) {
     return nullptr;
 }
 
-
 void chatregister::listChats() const {
     if (chats.empty()) {
         std::cout << "Nessuna chat registrata.\n";
@@ -42,8 +41,7 @@ void chatregister::listChats() const {
     std::cout << "Registro chat:\n";
     int index = 1;
     for (const auto& c : chats) {
-        std::cout << index++ << ". " << c->getUser1().getName() << " & " << c->getUser2().getName() << "\n";
-
+        std::cout << index++ << ". " << c->getChatName()  << "\n";
 
         const auto lastMessage = c->getLastMessage();
         if (lastMessage) {
@@ -55,6 +53,7 @@ void chatregister::listChats() const {
         }
     }
 }
+
 
 
 

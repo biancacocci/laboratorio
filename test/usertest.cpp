@@ -45,4 +45,27 @@ TEST_F(UserTest, EqualityOperator) {
     EXPECT_FALSE(*u1 == *u3);
 }
 
+TEST_F(UserTest, GetName) {
+    EXPECT_EQ(u1->getName(), "Alice");
+    EXPECT_EQ(u3->getName(), "Bob");
+}
+
+TEST_F(UserTest, GetId) {
+    EXPECT_EQ(u1->getId(), 1);
+    EXPECT_EQ(u3->getId(), 2);
+}
+
+TEST_F(UserTest, CopyConstructor) {
+    user u4 = *u1;
+    EXPECT_EQ(u4.getName(), u1->getName());
+    EXPECT_EQ(u4.getId(), u1->getId());
+}
+
+TEST_F(UserTest, AssignmentOperator) {
+    user u4("Temp", 99);
+    u4 = *u3;
+    EXPECT_EQ(u4.getName(), "Bob");
+    EXPECT_EQ(u4.getId(), 2);
+}
+
 

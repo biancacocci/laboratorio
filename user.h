@@ -11,9 +11,10 @@ public:
     explicit InvalidUserIdException(const std::string& message)
             : std::runtime_error(message) {}
 };
+
 class user {
 public:
-    user(std::string  name, int id);
+    user(const std::string&  name, int id);
 
     const std::string &getName() const;
 
@@ -25,11 +26,9 @@ public:
 
     bool operator==(const user& other) const;
 
-
 private:
     std::string name;
     int id;
 };
-
 
 #endif //LABORATORIO_USER_H

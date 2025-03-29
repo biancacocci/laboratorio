@@ -7,14 +7,11 @@
 #include <list>
 #include "chat.h"
 
-
 class chatregister {
 public:
-
-
     const std::list<std::shared_ptr<chat>> &getChats() const;
 
-    void addChat (const std::shared_ptr<chat>& chat);
+    void addChat (std::shared_ptr<chat>& chat);
 
     void removeChat(const user& u1, const user& u2);
 
@@ -22,12 +19,8 @@ public:
 
     void listChats() const;
 
-
-
 private:
-    std::list <std::shared_ptr<chat>> chats;
-
+    std::list<std::shared_ptr<chat>> chats;
 };
-
 
 #endif //LABORATORIO_CHATREGISTER_H

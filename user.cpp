@@ -5,7 +5,7 @@
 #include "user.h"
 #include <utility>
 
-user::user(std::string  name, int id) : name(std::move(name)) {
+user::user(const std::string&  name, int id) : name(std::move(name)) {
     if (id <= 0) {
         throw InvalidUserIdException("ID utente non valido: deve essere maggiore di zero.");
     }

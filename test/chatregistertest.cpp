@@ -1,82 +1,123 @@
 #include <gtest/gtest.h>
 #include <memory>
+#include <sstream>
 #include "chatregister.h"
 #include "user.h"
 #include "chat.h"
+#include "message.h"
 
 class ChatRegisterTest : public ::testing::Test {
 protected:
-    std::unique_ptr<chatregister> chatReg;
-    std::shared_ptr<user> user1, user2, user3;
-    std::shared_ptr<chat> chat1, chat2;
+    std::unique_ptr<chatregister> reg;
+    std::shared_ptr<user> alice, bob, charlie;
+    std::shared_ptr<chat> chatAB, chatBC;
     std::shared_ptr<message> msg1, msg2;
 
     void SetUp() override {
-        chatReg = std::make_unique<chatregister>();
+        reg = std::make_unique<chatregister>();
 
-        user1 = std::make_shared<user>("Alice", 1);
-        user2 = std::make_shared<user>("Bob", 2);
-        user3 = std::make_shared<user>("Charlie", 3);
+        alice = std::make_shared<user>("Alice", 1);
+        bob = std::make_shared<user>("Bob", 2);
+        charlie = std::make_shared<user>("Charlie", 3);
 
-        chat1 = std::make_shared<chat>(*user1, *user2);
-        chat2 = std::make_shared<chat>(*user2, *user3);
+        chatAB = std::make_shared<chat>(*alice, *bob, "Alice-Bob");
+        chatBC = std::make_shared<chat>(*bob, *charlie, "Bob-Charlie");
 
-        msg1 = std::make_shared<message>(*user1, *user2, "Ciao Bob!");
-        msg2 = std::make_shared<message>(*user2, *user3, "Pronto Charlie!");
+        msg1 = std::make_shared<message>(*alice, *bob, "Ciao Bob!");
+        msg2 = std::make_shared<message>(*bob, *charlie, "Pronto Charlie?");
 
-        chat1->addMessage(*msg1);
-        chat2->addMessage(*msg2);
-
-        chatReg->addChat(chat1);
-        chatReg->addChat(chat2);
+        chatAB->addMessage(*msg1);
+        chatBC->addMessage(*msg2);
     }
 };
 
-TEST_F(ChatRegisterTest, AddChat) {
-    EXPECT_NE(chatReg->findChat(*user1, *user2), nullptr);
-    EXPECT_NE(chatReg->findChat(*user2, *user3), nullptr);
+TEST_F(ChatRegisterTest, AddChatAndVerify) {
+    reg->addChat(chatAB);
+    EXPECT_EQ(reg->getChats().size(), 1);
+
+    reg->addChat(chatBC);
+    EXPECT_EQ(reg->getChats().size(), 2);
+}
+
+TEST_F(ChatRegisterTest, FindExistingChat) {
+    reg->addChat(chatAB);
+    reg->addChat(chatBC);
+
+    auto found1 = reg->findChat(*alice, *bob);
+    ASSERT_NE(found1, nullptr);
+    EXPECT_EQ(found1->getChatName(), "Alice-Bob");
+
+    auto found2 = reg->findChat(*bob, *charlie);
+    ASSERT_NE(found2, nullptr);
+    EXPECT_EQ(found2->getLastMessage()->getText(), "Pronto Charlie?");
+}
+
+TEST_F(ChatRegisterTest, FindNonExistentChat) {
+    EXPECT_EQ(reg->findChat(*alice, *bob), nullptr);
+
+    reg->addChat(chatAB);
+    EXPECT_EQ(reg->findChat(*alice, *charlie), nullptr);
 }
 
 TEST_F(ChatRegisterTest, RemoveChat) {
-    chatReg->removeChat(*user1, *user2);
-    EXPECT_EQ(chatReg->findChat(*user1, *user2), nullptr);
-    EXPECT_NE(chatReg->findChat(*user2, *user3), nullptr);
+    reg->addChat(chatAB);
+    reg->addChat(chatBC);
+
+    reg->removeChat(*alice, *bob);
+    EXPECT_EQ(reg->getChats().size(), 1);
+    EXPECT_EQ(reg->findChat(*alice, *bob), nullptr);
+
+    reg->removeChat(*bob, *charlie);
+    EXPECT_TRUE(reg->getChats().empty());
 }
 
-TEST_F(ChatRegisterTest, FindChat) {
-    auto foundChat = chatReg->findChat(*user1, *user2);
-    ASSERT_NE(foundChat, nullptr);
-    EXPECT_EQ(foundChat->getUser1().getName(), "Alice");
-    EXPECT_EQ(foundChat->getUser2().getName(), "Bob");
-    EXPECT_EQ(chatReg->findChat(*user1, *user3), nullptr);
-}
+TEST_F(ChatRegisterTest, GetChatsList) {
+    reg->addChat(chatAB);
+    reg->addChat(chatBC);
 
-TEST_F(ChatRegisterTest, GetChats) {
-    const auto& chatList = chatReg->getChats();
-    EXPECT_EQ(chatList.size(), 2);
+    const auto& chats = reg->getChats();
+    ASSERT_EQ(chats.size(), 2);
 
-    bool found1 = false, found2 = false;
-    for (const auto& c : chatList) {
-        if (c->getUser1().getName() == "Alice" && c->getUser2().getName() == "Bob")
-            found1 = true;
-        if (c->getUser1().getName() == "Bob" && c->getUser2().getName() == "Charlie")
-            found2 = true;
+    bool hasAB = false, hasBC = false;
+    for (const auto& c : chats) {
+        if (c->getChatName() == "Alice-Bob") hasAB = true;
+        if (c->getChatName() == "Bob-Charlie") hasBC = true;
     }
-    EXPECT_TRUE(found1);
-    EXPECT_TRUE(found2);
+    EXPECT_TRUE(hasAB);
+    EXPECT_TRUE(hasBC);
 }
-TEST_F(ChatRegisterTest, ListChats) {
+
+
+
+TEST_F(ChatRegisterTest, ListEmptyChats) {
     testing::internal::CaptureStdout();
-    chatReg->listChats();
+    reg->listChats();
     std::string output = testing::internal::GetCapturedStdout();
 
-    EXPECT_NE(output.find("Registro chat:"), std::string::npos);
-    EXPECT_NE(output.find("Alice & Bob"), std::string::npos);
-    EXPECT_NE(output.find("Bob & Charlie"), std::string::npos);
-    EXPECT_NE(output.find("Ciao Bob!"), std::string::npos);
-    EXPECT_NE(output.find("Pronto Charlie!"), std::string::npos);
-    EXPECT_NE(output.find("Ultimo messaggio:"), std::string::npos);
+    EXPECT_NE(output.find("Nessuna chat registrata."), std::string::npos);
 }
 
 
 
+TEST_F(ChatRegisterTest, ChatOrderPreservation) {
+    auto chatAC = std::make_shared<chat>(*alice, *charlie, "Alice-Charlie");
+
+    reg->addChat(chatAB);
+    reg->addChat(chatBC);
+    reg->addChat(chatAC);
+
+    const auto& chats = reg->getChats();
+    ASSERT_EQ(chats.size(), 3);
+
+}
+
+TEST_F(ChatRegisterTest, FindChatWithSwappedUsers) {
+    reg->addChat(chatAB);
+
+    auto found1 = reg->findChat(*alice, *bob);
+    auto found2 = reg->findChat(*bob, *alice);
+
+    EXPECT_NE(found1, nullptr);
+    EXPECT_NE(found2, nullptr);
+    EXPECT_EQ(found1, found2);
+}

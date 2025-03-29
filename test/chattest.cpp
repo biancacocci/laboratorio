@@ -3,95 +3,136 @@
 #include <vector>
 #include "chat.h"
 #include "message.h"
+#include "user.h"
+
 class ChatTest : public ::testing::Test {
 protected:
     std::unique_ptr<user> user1;
     std::unique_ptr<user> user2;
     std::unique_ptr<user> user3;
-    std::unique_ptr<chat> chat1;
-    std::vector<std::shared_ptr<message>> messages;
+    std::unique_ptr<chat> test_chat;
+    std::vector<std::shared_ptr<message>> test_messages;
 
     void SetUp() override {
         user1 = std::make_unique<user>("Alice", 1);
         user2 = std::make_unique<user>("Bob", 2);
         user3 = std::make_unique<user>("Charlie", 3);
-        chat1 = std::make_unique<chat>(*user1, *user2);
+        test_chat = std::make_unique<chat>(*user1, *user2, "Chat Alice-Bob");
+
+
+        test_messages.push_back(std::make_shared<message>(*user1, *user2, "Ciao Bob!"));
+        test_messages.push_back(std::make_shared<message>(*user2, *user1, "Ciao Alice!"));
+        test_messages.push_back(std::make_shared<message>(*user1, *user2, "Come stai?"));
+
+
+        test_chat->addMessage(*test_messages[0]);
+        test_chat->addMessage(*test_messages[1]);
     }
+
     void TearDown() override {
-        messages.clear();
+        test_messages.clear();
     }
 };
 
 TEST_F(ChatTest, Constructor) {
-    EXPECT_EQ(chat1->getUser1().getName(), user1->getName());
-    EXPECT_EQ(chat1->getUser2().getName(), user2->getName());
-    EXPECT_EQ(chat1->getLastMessage(), nullptr);
+    EXPECT_EQ(test_chat->getUser1().getName(), "Alice");
+    EXPECT_EQ(test_chat->getUser2().getName(), "Bob");
+    EXPECT_EQ(test_chat->getChatName(), "Chat Alice-Bob");
+    EXPECT_EQ(test_chat->getLastMessage()->getText(), "Ciao Alice!");
 }
 
-TEST_F(ChatTest, AddMessage) {
-    messages.push_back(std::make_shared<message>(*user1, *user2, "Ciao Bob!"));
-    chat1->addMessage(*messages.back());
+TEST_F(ChatTest, AddValidMessage) {
+    EXPECT_NO_THROW(test_chat->addMessage(*test_messages[2]));
+    EXPECT_EQ(test_chat->getLastMessage()->getText(), "Come stai?");
+}
 
-    int count = 0;
-    chat1->forEachMessage([&](const message& msg) { count++; });
-    EXPECT_EQ(count, 1);
-    EXPECT_EQ(chat1->getLastMessage()->getText(), "Ciao Bob!");
+TEST_F(ChatTest, AddInvalidMessage) {
+    message invalid_msg(*user3, *user1, "Messaggio non valido");
+    EXPECT_THROW(test_chat->addMessage(invalid_msg), std::invalid_argument);
 }
 
 TEST_F(ChatTest, RemoveMessageNotRead) {
-    messages.push_back(std::make_shared<message>(*user1, *user2, "Messaggio da eliminare"));
-    chat1->addMessage(*messages.back());
+    test_messages[0]->markAsRead();
+    EXPECT_THROW(test_chat->removeMessage(*test_messages[0]), MessageAlreadyReadException);
 
-    chat1->removeMessage(*messages.back());
-    EXPECT_EQ(chat1->getLastMessage(), nullptr);
+    EXPECT_NO_THROW(test_chat->removeMessage(*test_messages[1]));
+    auto [total, unread] = test_chat->forEachMessage([](const message&){});
+    EXPECT_EQ(total, 1);
 }
 
-TEST_F(ChatTest, RemoveMessageAlreadyRead) {
-    messages.push_back(std::make_shared<message>(*user1, *user2, "Messaggio già letto"));
-    messages.back()->markAsRead();
-    chat1->addMessage(*messages.back());
+TEST_F(ChatTest, MarkMessagesAsRead) {
+    auto [total_before, unread_before] = test_chat->markMessagesAsRead(1);
+    EXPECT_EQ(total_before, 2);
+    EXPECT_EQ(unread_before, 2);
 
-    EXPECT_THROW(chat1->removeMessage(*messages.back()), MessageAlreadyReadException);
+    auto [total_after, unread_after] = test_chat->forEachMessage([](const message&){});
+    EXPECT_EQ(unread_after, 1);
 }
 
+TEST_F(ChatTest, ForEachMessage) {
+    int count = 0;
+    auto [total, unread] = test_chat->forEachMessage([&](const message& msg) {
+        count++;
+    });
 
-
-TEST_F(ChatTest, FindMessageByText_Exists) {
-    messages.push_back(std::make_shared<message>(*user1, *user2, "Ciao Bob!"));
-    chat1->addMessage(*messages.back());
-
-    auto result = chat1->findMessageByText("Ciao Bob!");
-    ASSERT_FALSE(result.empty());
-    EXPECT_EQ(result.front()->getText(), "Ciao Bob!");
+    EXPECT_EQ(count, 2);
+    EXPECT_EQ(total, 2);
+    EXPECT_EQ(unread, 2);
 }
 
-TEST_F(ChatTest, FindMessageByText_NotExists) {
-    auto result = chat1->findMessageByText("Messaggio inesistente");
-    EXPECT_TRUE(result.empty());
+TEST_F(ChatTest, FindMessageByText) {
+    auto found1 = test_chat->findMessageByText("Ciao");
+    EXPECT_EQ(found1.size(), 2);
+
+    auto found2 = test_chat->findMessageByText("Alice");
+    EXPECT_EQ(found2.size(), 1);
+
+    auto not_found = test_chat->findMessageByText("Non esistente");
+    EXPECT_TRUE(not_found.empty());
 }
 
-TEST_F(ChatTest, ForwardMessageValid) {
-    messages.push_back(std::make_shared<message>(*user1, *user2, "Messaggio originale"));
-    chat1->addMessage(*messages.back());
-
+TEST_F(ChatTest, ForwardMessage) {
     testing::internal::CaptureStdout();
-    chat1->forwardMessage(*messages.back(), *user3);
+    test_chat->forwardMessage(*test_messages[0], *user3);
     std::string output = testing::internal::GetCapturedStdout();
 
+    EXPECT_NE(output.find("Messaggio inoltrato con successo"), std::string::npos);
+
+    auto [total, unread] = test_chat->forEachMessage([](const message&){});
+    EXPECT_EQ(total, 3);
+
     bool found = false;
-    chat1->forEachMessage([&](const message& msg) {
-        if (msg.getText() == "Inoltrato: Messaggio originale" &&
-            msg.getSender().getName() == user1->getName()) {
+    test_chat->forEachMessage([&](const message& msg) {
+        if (msg.getText().find("Inoltrato: Ciao Bob!") != std::string::npos) {
             found = true;
         }
     });
     EXPECT_TRUE(found);
-    EXPECT_NE(output.find("Messaggio inoltrato con successo"), std::string::npos);
 }
 
-TEST_F(ChatTest, ForwardMessageInvalid) {
-    message fakeMessage(*user1, *user2, "Messaggio falso");
-    EXPECT_THROW(chat1->forwardMessage(fakeMessage, *user3), std::invalid_argument);
+TEST_F(ChatTest, GetLastMessage) {
+    EXPECT_EQ(test_chat->getLastMessage()->getText(), "Ciao Alice!");
+
+    test_chat->addMessage(*test_messages[2]);
+    EXPECT_EQ(test_chat->getLastMessage()->getText(), "Come stai?");
+
+    test_chat->removeMessage(*test_messages[1]);
+    EXPECT_EQ(test_chat->getLastMessage()->getText(), "Come stai?");
+}
+
+TEST_F(ChatTest, MessageCounters) {
+    test_chat->markMessagesAsRead(1);
+
+    auto [total1, unread1] = test_chat->forEachMessage([](const message&){});
+    EXPECT_EQ(total1, 2);
+    EXPECT_EQ(unread1, 1);
+
+
+    test_chat->addMessage(*test_messages[2]);
+
+    auto [total2, unread2] = test_chat->forEachMessage([](const message&){});
+    EXPECT_EQ(total2, 3);
+    EXPECT_EQ(unread2, 2);
 }
 
 

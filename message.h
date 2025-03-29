@@ -15,8 +15,7 @@ public:
 
 class message {
 public:
-    message(user sender, user receiver, std::string text);
-
+    message(const user& sender, const user& receiver, const std::string& text);
 
     void setText(const std::string &newtext);
 
@@ -26,7 +25,7 @@ public:
 
     const std::string &getText() const;
 
-    bool getIsRead () const;
+    bool IsRead() const;
 
     void markAsRead();
 
@@ -38,6 +37,5 @@ private:
     std:: string text;
     bool isRead=false;
 };
-
 
 #endif //LABORATORIO_MESSAGE_H
