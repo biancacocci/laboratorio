@@ -38,7 +38,9 @@ int main() {
                       << (msg.IsRead() ? " [LETTO]" : " [NON LETTO]")
                       << std::endl;
         });
-        std::cout << "Messaggi totali: " << total1 << ", da leggere: " << unread1 << std::endl;
+        std::cout << "Messaggi totali: " << total1
+                  << ", letti: " << (total1 - unread1)
+                  << ", da leggere: " << unread1 << std::endl;
 
         try {
             chat1->removeMessage(msg1);
@@ -80,7 +82,9 @@ int main() {
                       << msg.getReceiver().getName() << ": "
                       << msg.getText() << std::endl;
         });
-        std::cout << "Messaggi totali: " << total2 << ", da leggere: " << unread2 << std::endl;
+        std::cout << "Messaggi totali: " << total2
+                  << ", letti: " << (total2 - unread2)
+                  << ", da leggere: " << unread2 << std::endl;
 
         std::cout << "\n=== Chat registrate ===" << std::endl;
         registry.listChats();

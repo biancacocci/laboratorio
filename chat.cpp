@@ -16,21 +16,28 @@ const std::string& chat::getChatName() const {
     return chatName;
 }
 
+int chat::getTotalMessagesCount() const {
+    return messages.size();
+}
+
+int chat::getUnreadMessagesCount() const {
+    return std::count_if(messages.begin(), messages.end(),
+                         [](const auto& msg) { return !msg->IsRead(); });
+}
+
+
 std::pair<int, int> chat::markMessagesAsRead(int n) {
     int count = 0;
-    int totalMessages = 0;
-    int unreadMessages = 0;
+    const int initialUnread = getUnreadMessagesCount();
+
     for (auto& msg : messages) {
-        totalMessages++;
-        if (!msg->IsRead()) {
-            unreadMessages++;
-            if (count < n) {
-                msg->markAsRead();
-                count++;
-            }
+        if (!msg->IsRead() && count < n) {
+            msg->markAsRead();
+            count++;
         }
     }
-    return {totalMessages, unreadMessages};
+
+    return {getTotalMessagesCount(), initialUnread};
 }
 
 const std::shared_ptr<message> chat::getLastMessage() const {

@@ -19,11 +19,9 @@ protected:
         user3 = std::make_unique<user>("Charlie", 3);
         test_chat = std::make_unique<chat>(*user1, *user2, "Chat Alice-Bob");
 
-
         test_messages.push_back(std::make_shared<message>(*user1, *user2, "Ciao Bob!"));
         test_messages.push_back(std::make_shared<message>(*user2, *user1, "Ciao Alice!"));
         test_messages.push_back(std::make_shared<message>(*user1, *user2, "Come stai?"));
-
 
         test_chat->addMessage(*test_messages[0]);
         test_chat->addMessage(*test_messages[1]);
@@ -56,8 +54,7 @@ TEST_F(ChatTest, RemoveMessageNotRead) {
     EXPECT_THROW(test_chat->removeMessage(*test_messages[0]), MessageAlreadyReadException);
 
     EXPECT_NO_THROW(test_chat->removeMessage(*test_messages[1]));
-    auto [total, unread] = test_chat->forEachMessage([](const message&){});
-    EXPECT_EQ(total, 1);
+    EXPECT_EQ(test_chat->getTotalMessagesCount(), 1);
 }
 
 TEST_F(ChatTest, MarkMessagesAsRead) {
@@ -65,8 +62,7 @@ TEST_F(ChatTest, MarkMessagesAsRead) {
     EXPECT_EQ(total_before, 2);
     EXPECT_EQ(unread_before, 2);
 
-    auto [total_after, unread_after] = test_chat->forEachMessage([](const message&){});
-    EXPECT_EQ(unread_after, 1);
+    EXPECT_EQ(test_chat->getUnreadMessagesCount(), 1);
 }
 
 TEST_F(ChatTest, ForEachMessage) {
@@ -97,9 +93,7 @@ TEST_F(ChatTest, ForwardMessage) {
     std::string output = testing::internal::GetCapturedStdout();
 
     EXPECT_NE(output.find("Messaggio inoltrato con successo"), std::string::npos);
-
-    auto [total, unread] = test_chat->forEachMessage([](const message&){});
-    EXPECT_EQ(total, 3);
+    EXPECT_EQ(test_chat->getTotalMessagesCount(), 3);
 
     bool found = false;
     test_chat->forEachMessage([&](const message& msg) {
@@ -123,17 +117,13 @@ TEST_F(ChatTest, GetLastMessage) {
 TEST_F(ChatTest, MessageCounters) {
     test_chat->markMessagesAsRead(1);
 
-    auto [total1, unread1] = test_chat->forEachMessage([](const message&){});
-    EXPECT_EQ(total1, 2);
-    EXPECT_EQ(unread1, 1);
-
+    EXPECT_EQ(test_chat->getTotalMessagesCount(), 2);
+    EXPECT_EQ(test_chat->getUnreadMessagesCount(), 1);
 
     test_chat->addMessage(*test_messages[2]);
 
-    auto [total2, unread2] = test_chat->forEachMessage([](const message&){});
-    EXPECT_EQ(total2, 3);
-    EXPECT_EQ(unread2, 2);
+    EXPECT_EQ(test_chat->getTotalMessagesCount(), 3);
+    EXPECT_EQ(test_chat->getUnreadMessagesCount(), 2);
 }
-
 
 

@@ -32,6 +32,10 @@ public:
 
     void removeMessage(const message& msg);
 
+    int getTotalMessagesCount() const;
+
+    int getUnreadMessagesCount() const;
+
     std::pair<int, int> markMessagesAsRead(int n);
 
     const std::shared_ptr<message> getLastMessage() const;
